@@ -1,0 +1,878 @@
+* {
+    box-sizing: border-box;
+}
+
+
+body {
+
+    margin: 0;
+
+    background: #f5f7fb;
+
+    color: #172033;
+
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+}
+
+
+.app {
+
+    width: min(100%, 520px);
+
+    min-height: 100vh;
+
+    margin: auto;
+
+    padding: 22px 18px 30px;
+}
+
+
+
+/* HEADER */
+
+header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+}
+
+
+.header-actions {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+
+.language-btn {
+
+    min-height: 42px;
+
+    padding: 0 12px;
+
+    border: 1px solid #dbe1ea;
+
+    border-radius: 14px;
+
+    background: white;
+
+    color: #172033;
+
+    font: inherit;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+
+.eyebrow {
+
+    font-size: 11px;
+
+    letter-spacing: 2px;
+
+    color: #64748b;
+
+    margin: 0 0 4px;
+}
+
+
+h1 {
+
+    font-size: 25px;
+
+    margin: 0;
+}
+
+
+.icon-btn {
+
+    border: none;
+
+    background: white;
+
+    width: 42px;
+
+    height: 42px;
+
+    border-radius: 14px;
+
+    font-size: 19px;
+
+    cursor: pointer;
+}
+
+
+
+/* HERO */
+
+.hero {
+
+    margin-top: 26px;
+
+    background: #172033;
+
+    color: white;
+
+    border-radius: 24px;
+
+    padding: 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+}
+
+
+.hero p {
+
+    margin: 0 0 5px;
+
+    color: #cbd5e1;
+
+    font-size: 13px;
+}
+
+
+.hero h2 {
+
+    margin: 0;
+
+    font-size: 20px;
+}
+
+
+.count {
+
+    width: 42px;
+
+    height: 42px;
+
+    border-radius: 50%;
+
+    display: grid;
+
+    place-items: center;
+
+    background: #334155;
+
+    font-weight: 700;
+}
+
+
+
+/* MEDICINE LIST */
+
+.medicine-list {
+
+    margin-top: 18px;
+
+    display: grid;
+
+    gap: 14px;
+}
+
+
+.medicine {
+
+    background: white;
+
+    border-radius: 20px;
+
+    padding: 16px;
+
+    box-shadow:
+        0 5px 20px #0000000a;
+}
+
+
+.medicine-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 10px;
+}
+
+
+.medicine-state {
+
+    margin: 12px 0 0;
+
+    padding: 9px 11px;
+
+    border-radius: 10px;
+
+    background: #f1f5f9;
+
+    color: #475569;
+
+    font-size: 12px;
+
+    font-weight: 600;
+}
+
+
+.medicine h3 {
+
+    margin: 0;
+
+    font-size: 18px;
+}
+
+
+.dosage {
+
+    margin: 5px 0;
+
+    color: #64748b;
+
+    font-size: 14px;
+}
+
+
+.meal {
+
+    display: inline-block;
+
+    margin-top: 5px;
+
+    padding: 5px 9px;
+
+    border-radius: 8px;
+
+    background: #f1f5f9;
+
+    color: #475569;
+
+    font-size: 12px;
+}
+
+
+.notes {
+
+    margin-top: 10px;
+
+    color: #64748b;
+
+    font-size: 13px;
+
+    line-height: 1.4;
+}
+
+
+
+/* DOSES */
+
+.dose-list {
+
+    margin-top: 14px;
+
+    display: grid;
+
+    gap: 8px;
+}
+
+
+.dose-item {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 10px 12px;
+
+    background: #f8fafc;
+
+    border-radius: 12px;
+}
+
+
+.dose-info {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 2px;
+}
+
+
+.dose-time {
+
+    font-weight: 700;
+
+    font-size: 14px;
+}
+
+
+.dose-status {
+
+    font-size: 11px;
+
+    color: #64748b;
+}
+
+
+.status-btn {
+
+    border: none;
+
+    border-radius: 9px;
+
+    padding: 8px 10px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    background: #eef2ff;
+
+    color: #3730a3;
+}
+
+
+.status-btn.taken {
+
+    background: #dcfce7;
+
+    color: #166534;
+}
+
+
+.delete-btn {
+
+    margin-top: 12px;
+
+    border: none;
+
+    background: transparent;
+
+    color: #dc2626;
+
+    font-size: 12px;
+
+    cursor: pointer;
+}
+
+
+.stop-btn {
+
+    margin: 12px 10px 0 0;
+
+    padding: 0;
+
+    border: none;
+
+    background: transparent;
+
+    color: #b45309;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+
+
+/* ADD BUTTON */
+
+.add-btn {
+
+    width: 100%;
+
+    margin-top: 18px;
+
+    padding: 16px;
+
+    border: none;
+
+    border-radius: 18px;
+
+    background: #172033;
+
+    color: white;
+
+    font-size: 16px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+
+.note {
+
+    text-align: center;
+
+    color: #94a3b8;
+
+    font-size: 11px;
+
+    line-height: 1.5;
+
+    margin: 20px 10px;
+}
+
+
+.empty {
+
+    text-align: center;
+
+    padding: 45px 15px;
+
+    color: #94a3b8;
+}
+
+
+
+/* MODAL */
+
+.modal {
+
+    position: fixed;
+
+    inset: 0;
+
+    background: #0f172a99;
+
+    display: grid;
+
+    place-items: end center;
+
+    padding: 0;
+}
+
+
+.modal.hidden {
+
+    display: none;
+}
+
+
+.modal-card {
+
+    width: min(100%, 520px);
+
+    max-height: 92vh;
+
+    overflow-y: auto;
+
+    background: white;
+
+    border-radius: 26px 26px 0 0;
+
+    padding: 22px 18px 30px;
+}
+
+
+.modal-head {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+}
+
+
+.modal-head h2 {
+
+    margin: 0;
+}
+
+
+.close-btn {
+
+    border: none;
+
+    background: transparent;
+
+    font-size: 28px;
+
+    cursor: pointer;
+}
+
+
+.modal form {
+
+    display: grid;
+
+    gap: 16px;
+
+    margin-top: 20px;
+}
+
+
+label {
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    color: #334155;
+
+    display: grid;
+
+    gap: 7px;
+}
+
+
+.repeat-section {
+
+    display: grid;
+
+    gap: 10px;
+}
+
+
+.repeat-section h3 {
+
+    margin: 0;
+}
+
+
+.repeat-option {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+}
+
+
+.repeat-option input[type="radio"] {
+
+    width: 18px;
+
+    height: 18px;
+
+    margin: 0;
+
+    padding: 0;
+
+    flex: 0 0 auto;
+}
+
+
+input,
+select,
+textarea {
+
+    width: 100%;
+
+    padding: 13px 14px;
+
+    border: 1px solid #dbe1ea;
+
+    border-radius: 12px;
+
+    font: inherit;
+
+    outline: none;
+
+    background: white;
+}
+
+
+textarea {
+
+    min-height: 80px;
+
+    resize: vertical;
+}
+
+
+input:focus,
+select:focus,
+textarea:focus {
+
+    border-color: #64748b;
+}
+
+
+
+/* DOSE SECTION */
+
+.dose-section {
+
+    padding: 14px;
+
+    background: #f8fafc;
+
+    border-radius: 16px;
+}
+
+
+.dose-section h3 {
+
+    margin: 0 0 12px;
+
+    font-size: 14px;
+}
+
+
+.dose-input {
+
+    margin-bottom: 9px;
+}
+
+
+.save-btn {
+
+    border: none;
+
+    border-radius: 14px;
+
+    background: #172033;
+
+    color: white;
+
+    padding: 14px;
+
+    font-weight: 700;
+
+    font-size: 15px;
+
+    cursor: pointer;
+}
+
+
+button:active {
+
+    transform: scale(.98);
+}
+
+
+
+/* DESKTOP */
+
+@media (min-width: 600px) {
+
+    body {
+
+        padding: 25px 0;
+    }
+
+    .app {
+
+        background: white;
+
+        min-height: calc(100vh - 50px);
+
+        border-radius: 30px;
+
+        box-shadow:
+            0 10px 40px #0000000d;
+    }
+
+}
+
+/* =========================
+   SUBTLE ANIMATIONS
+========================= */
+
+/* Smooth page appearance */
+.app {
+    animation: appFadeIn 0.5s ease;
+}
+
+@keyframes appFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* Medicine cards */
+.medicine {
+    animation: medicineFadeIn 0.4s ease both;
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.medicine:hover {
+    transform: translateY(-2px);
+}
+
+
+/* Add button */
+.add-btn {
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.add-btn:hover {
+    transform: translateY(-2px);
+}
+
+.add-btn:active {
+    transform: scale(0.97);
+}
+
+
+/* All buttons */
+button {
+    transition:
+        transform 0.18s ease,
+        opacity 0.18s ease,
+        background-color 0.2s ease;
+}
+
+button:active {
+    transform: scale(0.96);
+}
+
+
+/* Taken button */
+.status-btn {
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        transform 0.2s ease;
+}
+
+.status-btn.taken {
+    animation: takenPop 0.3s ease;
+}
+
+@keyframes takenPop {
+    0% {
+        transform: scale(0.9);
+    }
+
+    70% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+
+/* Notification button */
+.icon-btn {
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.icon-btn:hover {
+    transform: scale(1.08);
+}
+
+.icon-btn:active {
+    transform: scale(0.92);
+}
+
+
+/* Modal */
+.modal {
+    transition:
+        opacity 0.25s ease,
+        visibility 0.25s ease;
+}
+
+.modal-card {
+    animation: modalOpen 0.3s ease;
+}
+
+@keyframes modalOpen {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+
+/* Form inputs */
+input,
+select,
+textarea {
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    transform: translateY(-1px);
+}
+
+
+/* Delete button */
+.delete-btn {
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+}
+
+.delete-btn:hover {
+    transform: translateY(-1px);
+}
+
+
+/* Dose items */
+.dose-item {
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.dose-item:hover {
+    transform: translateX(2px);
+}
+
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+}

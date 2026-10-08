@@ -1,5 +1,5 @@
 # 💊 Medicine Reminder
-
+# 💊 [Medicine Reminder](https://aashfaak.github.io/Medicine-Reminder/)
 A simple and user-friendly web application that helps you keep track of your medicines and never miss a dose.
 
 The app allows users to add medicines, set multiple dose times, choose meal timing, add notes, and mark doses as taken.
@@ -135,8 +135,9 @@ If you find a bug or have an idea for a new feature, feel free to open an **Issu
 
 **Ashfak**
 
-Computer Science & Engineering Student
-Interested in Software Development, Data Science & Technology.
+[**Ashfak — Build · Think · Explore**](https://mohammadashfak.vercel.app/)
+
+
 
 ---
 

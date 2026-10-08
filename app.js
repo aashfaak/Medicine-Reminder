@@ -123,7 +123,7 @@ let language =
 const t = key =>
     translations[language][key] ||
     translations.en[key] ||
-    key;
+    "";
 
 
 let medicines =
@@ -255,8 +255,11 @@ function applyLanguage() {
 
         document.querySelectorAll("[data-i18n]")
             .forEach(element => {
-                element.textContent =
+                const translation =
                     t(element.dataset.i18n);
+
+                if (translation)
+                    element.textContent = translation;
             });
 
         document.querySelectorAll("[data-i18n-placeholder]")
@@ -1302,8 +1305,15 @@ if (
 
             navigator
                 .serviceWorker
-                .register("sw.js")
+                .register(
+                    "sw.js",
+                    {
+                        updateViaCache: "none"
+                    }
+                )
                 .then(async registration => {
+
+                    await registration.update();
 
                     if (
                         "Notification" in window &&

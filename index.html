@@ -35,14 +35,20 @@
                     বাংলা
                 </button>
 
-                <button
-                    id="notifyBtn"
-                    class="icon-btn"
-                    type="button"
-                    aria-label="Enable notifications"
-                    title="Enable notifications">
-                    🔔
-                </button>
+                <div class="notification-control">
+                    <button
+                        id="notifyBtn"
+                        class="icon-btn"
+                        type="button"
+                        aria-label="Enable notifications"
+                        title="Enable notifications">
+                        🔔
+                    </button>
+                    <span class="notification-hint">
+                        <span data-i18n="notificationHintLine1">Tap 🔔 to allow</span>
+                        <span data-i18n="notificationHintLine2">notification</span>
+                    </span>
+                </div>
             </div>
 
         </header>
@@ -88,6 +94,12 @@
 
         <p class="note">
             <span data-i18n="disclaimer">This app only reminds you about medicines you enter. It does not provide medical advice.</span>
+            <br>
+            <span data-i18n="developedBy">Developed by</span>
+            <a
+                href="https://mohammadashfak.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer">Ashfak</a>
         </p>
 
     </main>

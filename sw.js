@@ -1,4 +1,4 @@
-const CACHE_NAME = "medicine-reminder-v2";
+const CACHE_NAME = "medicine-reminder-v3";
 
 const FILES_TO_CACHE = [
   "./",
@@ -37,14 +37,18 @@ self.addEventListener("activate", (event) => {
 // Push notification
 self.addEventListener("push", (event) => {
   let data = {
-    title: "Medicine Reminder 💊",
+    title: "💊 Medicine Reminder",
     body: "It's time to take your medicine.",
-    icon: "./icon-192.png"
+    tag: "medicine-reminder",
+    url: "./"
   };
 
   if (event.data) {
     try {
-      data = event.data.json();
+      data = {
+        ...data,
+        ...event.data.json()
+      };
     } catch (e) {
       data.body = event.data.text();
     }
@@ -53,10 +57,11 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: data.icon,
-      badge: data.icon,
+      tag: data.tag,
+      data: {
+        url: data.url || "./"
+      },
       vibrate: [200, 100, 200],
-      tag: "medicine-reminder",
       requireInteraction: true
     })
   );
@@ -78,7 +83,9 @@ self.addEventListener("notificationclick", (event) => {
       }
 
       if (clients.openWindow) {
-        return clients.openWindow("./");
+        return clients.openWindow(
+          event.notification.data?.url || "./"
+        );
       }
     })
   );

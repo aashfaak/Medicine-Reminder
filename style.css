@@ -55,6 +55,38 @@ header {
 }
 
 
+.notification-control {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 2px;
+}
+
+
+.notification-hint {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    color: #94a3b8;
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    line-height: 1.2;
+
+    white-space: nowrap;
+}
+
+
 .language-btn {
 
     min-height: 42px;

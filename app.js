@@ -12,6 +12,7 @@ const translations = {
         addMedicine: "＋ Add Medicine",
         modalAddMedicine: "Add Medicine",
         disclaimer: "This app only reminds you about medicines you enter. It does not provide medical advice.",
+        developedBy: "Developed by",
         medicineName: "Medicine Name",
         medicineNamePlaceholder: "e.g. Napa",
         dosage: "Dosage",
@@ -36,6 +37,8 @@ const translations = {
         saveMedicine: "Save Medicine",
         close: "Close",
         enableNotifications: "Enable notifications",
+        notificationHintLine1: "Tap 🔔 to allow",
+        notificationHintLine2: "notification",
         emptyMedicines: "No medicines added yet.",
         emptyHint: 'Tap "Add Medicine" to get started.',
         taken: "Taken",
@@ -48,6 +51,8 @@ const translations = {
         dose: "Dose",
         enterRepeatDays: "Please enter how many days.",
         notificationsUnsupported: "This browser does not support notifications.",
+        notificationPermissionDenied: "Notifications are blocked. Allow them in your browser settings.",
+        notificationError: "Push setup failed. Check HTTPS and server configuration.",
         notificationsEnabled: "Notifications are enabled.",
         notificationTitle: "💊 Medicine Reminder",
         reminderMessage: "Time to take {name} — {dosage}",
@@ -61,6 +66,7 @@ const translations = {
         addMedicine: "＋ ওষুধ যোগ করুন",
         modalAddMedicine: "ওষুধ যোগ করুন",
         disclaimer: "এই অ্যাপটি শুধু আপনার যোগ করা ওষুধের কথা মনে করিয়ে দেয়। এটি চিকিৎসা-পরামর্শ দেয় না।",
+        developedBy: "Developed by",
         medicineName: "ওষুধের নাম",
         medicineNamePlaceholder: "যেমন: নাপা",
         dosage: "মাত্রা",
@@ -85,6 +91,8 @@ const translations = {
         saveMedicine: "ওষুধ সংরক্ষণ করুন",
         close: "বন্ধ করুন",
         enableNotifications: "নোটিফিকেশন চালু করুন",
+        notificationHintLine1: "নোটিফিকেশনের অনুমতি",
+        notificationHintLine2: "দিতে 🔔 চাপুন",
         emptyMedicines: "এখনও কোনো ওষুধ যোগ করা হয়নি।",
         emptyHint: "শুরু করতে “ওষুধ যোগ করুন” চাপুন।",
         taken: "খাওয়া হয়েছে",
@@ -97,6 +105,8 @@ const translations = {
         dose: "ডোজ",
         enterRepeatDays: "কত দিন ধরে খাবেন, তা লিখুন।",
         notificationsUnsupported: "এই ব্রাউজারে নোটিফিকেশন সমর্থিত নয়।",
+        notificationPermissionDenied: "নোটিফিকেশন বন্ধ আছে। ব্রাউজারের সেটিংস থেকে অনুমতি দিন।",
+        notificationError: "পুশ চালু করা যায়নি। HTTPS ও সার্ভার কনফিগারেশন দেখুন।",
         notificationsEnabled: "নোটিফিকেশন চালু হয়েছে।",
         notificationTitle: "💊 Medicine Reminder",
         reminderMessage: "{name} খাওয়ার সময় হয়েছে — {dosage}",
@@ -281,6 +291,7 @@ function applyLanguage() {
 
         showDate();
         renderMedicines();
+        queuePushSync();
 
 }
 
@@ -296,6 +307,129 @@ function saveData() {
         STORAGE_KEY,
         JSON.stringify(medicines)
     );
+
+    queuePushSync();
+
+}
+
+
+function base64UrlToUint8Array(value) {
+
+    const padding =
+        "=".repeat((4 - value.length % 4) % 4);
+
+    const base64 =
+        (value + padding)
+            .replace(/-/g, "+")
+            .replace(/_/g, "/");
+
+    const raw =
+        atob(base64);
+
+    return Uint8Array.from(
+        raw,
+        character => character.charCodeAt(0)
+    );
+
+}
+
+
+async function syncPushSubscription(subscription) {
+
+    const details = {
+        subscription: subscription.toJSON(),
+        language,
+        timeZone:
+            Intl.DateTimeFormat()
+                .resolvedOptions()
+                .timeZone
+    };
+
+    const registerResponse =
+        await fetch("/api/push/subscribe", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(details)
+        });
+
+    if (!registerResponse.ok) {
+        throw new Error(
+            `Push subscription registration failed (${registerResponse.status}).`
+        );
+    }
+
+    const safeMedicines =
+        medicines.map(medicine => ({
+            id: medicine.id,
+            name: medicine.name,
+            dosage: medicine.dosage,
+            repeatType: medicine.repeatType,
+            repeatDays: medicine.repeatDays,
+            repeatStartDate: medicine.repeatStartDate,
+            active: medicine.active,
+            doses: medicine.doses.map(dose => ({
+                time: dose.time
+            }))
+        }));
+
+    const medicinesResponse =
+        await fetch("/api/push/medicines", {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                ...details,
+                medicines: safeMedicines
+            })
+        });
+
+    if (!medicinesResponse.ok) {
+        throw new Error(
+            `Medicine schedule sync failed (${medicinesResponse.status}).`
+        );
+    }
+
+}
+
+
+let pushSyncTimer;
+
+function queuePushSync() {
+
+    if (
+        !("Notification" in window) ||
+        Notification.permission !== "granted" ||
+        !("serviceWorker" in navigator)
+    )
+        return;
+
+    clearTimeout(pushSyncTimer);
+    pushSyncTimer = setTimeout(async function() {
+
+        try {
+
+            const registration =
+                await navigator.serviceWorker.ready;
+
+            const subscription =
+                await registration.pushManager.getSubscription();
+
+            if (subscription)
+                await syncPushSubscription(subscription);
+
+        } catch (error) {
+
+            console.error(
+                "Push schedule sync failed:",
+                error
+            );
+
+        }
+
+    }, 500);
 
 }
 
@@ -347,6 +481,33 @@ function mealText(type) {
         return t("withMeal");
 
     return t("anyTime");
+}
+
+
+async function showAppNotification(title, options) {
+
+    if ("serviceWorker" in navigator) {
+
+        const registration =
+            await navigator.serviceWorker.getRegistration();
+
+        if (!registration)
+            throw new Error("Service Worker is not registered.");
+
+        await registration.showNotification(
+            title,
+            options
+        );
+
+        return;
+
+    }
+
+    new Notification(
+        title,
+        options
+    );
+
 }
 
 
@@ -980,6 +1141,16 @@ $("notifyBtn").onclick =
 
         }
 
+        if (!window.isSecureContext) {
+
+            alert(
+                t("notificationsUnsupported")
+            );
+
+            return;
+
+        }
+
 
 
         const permission =
@@ -993,12 +1164,81 @@ $("notifyBtn").onclick =
             "granted"
         ) {
 
-            new Notification(
-                t("appTitle"),
-                {
-                    body:
-                        t("notificationsEnabled")
+            try {
+
+                if (!("serviceWorker" in navigator)) {
+                    throw new Error(
+                        "Service Workers are not supported by this browser."
+                    );
                 }
+
+                const keyResponse =
+                    await fetch("/api/push/public-key");
+
+                if (!keyResponse.ok) {
+                    throw new Error(
+                        `Push server configuration unavailable (${keyResponse.status}).`
+                    );
+                }
+
+                const { publicKey } =
+                    await keyResponse.json();
+
+                if (!publicKey) {
+                    throw new Error(
+                        "Push server did not provide a VAPID public key."
+                    );
+                }
+
+                const registration =
+                    await navigator.serviceWorker.ready;
+
+                let subscription =
+                    await registration.pushManager.getSubscription();
+
+                if (!subscription) {
+                    subscription =
+                        await registration.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey:
+                                base64UrlToUint8Array(publicKey)
+                        });
+                }
+
+                await syncPushSubscription(subscription);
+
+                await showAppNotification(
+                    t("appTitle"),
+                    {
+                        body:
+                            t("notificationsEnabled"),
+                        tag: "medicine-reminder-test",
+                        requireInteraction: true,
+                        vibrate: [
+                            200,
+                            100,
+                            200
+                        ]
+                    }
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Push notification setup failed:",
+                    error
+                );
+
+                alert(
+                    t("notificationError")
+                );
+
+            }
+
+        } else {
+
+            alert(
+                t("notificationPermissionDenied")
             );
 
         }
@@ -1016,26 +1256,7 @@ function checkReminders() {
     const now =
         new Date();
 
-
-    const currentHour =
-        String(
-            now.getHours()
-        ).padStart(2, "0");
-
-
-    const currentMinute =
-        String(
-            now.getMinutes()
-        ).padStart(2, "0");
-
-
-    const currentTime =
-        `${currentHour}:${currentMinute}`;
-
-
-
-    const today =
-        getLocalDateKey(now);
+    const today = getLocalDateKey(now);
 
     if (today !== lastRenderedDay) {
 
@@ -1043,113 +1264,6 @@ function checkReminders() {
         renderMedicines();
 
     }
-
-
-
-    medicines.forEach(
-        medicine => {
-
-            if (
-                getMedicineStatus(medicine) !==
-                "active"
-            )
-                return;
-
-            medicine.doses.forEach(
-                dose => {
-
-
-                    if (
-                        dose.time ===
-                        currentTime &&
-
-                        dose.lastNotified !==
-                        today + currentTime
-                    ) {
-
-
-                        dose.lastNotified =
-                            today +
-                            currentTime;
-
-
-                        saveData();
-
-
-
-                        const message =
-                            t("reminderMessage")
-                                .replace("{name}", medicine.name)
-                                .replace("{dosage}", medicine.dosage);
-
-
-
-                        if (
-                            "Notification" in window &&
-                            Notification.permission === "granted"
-                        ) {
-
-                            // Normal browser notification
-                            new Notification(
-                                t("notificationTitle"),
-                                {
-                                    body: message,
-                                    tag: `medicine-${medicine.id}-${dose.time}`,
-                                    requireInteraction: true
-                                }
-                            );
-
-                            // Service Worker notification
-                            if ("serviceWorker" in navigator) {
-
-                                navigator.serviceWorker.ready
-                                    .then(function(registration) {
-
-                                        registration.showNotification(
-                                            t("notificationTitle"),
-                                            {
-                                                body: message,
-
-                                                tag:
-                                                    `medicine-${medicine.id}-${dose.time}`,
-
-                                                requireInteraction: true,
-
-                                                vibrate: [
-                                                    200,
-                                                    100,
-                                                    200
-                                                ]
-                                            }
-                                        );
-
-                                    })
-                                    .catch(function(error) {
-
-                                        console.log(
-                                            "Notification error:",
-                                            error
-                                        );
-
-                                    });
-
-                            }
-
-                        } else {
-
-                            alert(
-                                `${t("notificationTitle")}\n\n${message}`
-                            );
-
-                        }
-
-                    }
-
-                }
-            );
-
-        }
-    );
 
 }
 
@@ -1189,6 +1303,22 @@ if (
             navigator
                 .serviceWorker
                 .register("sw.js")
+                .then(async registration => {
+
+                    if (
+                        "Notification" in window &&
+                        Notification.permission === "granted"
+                    ) {
+
+                        const subscription =
+                            await registration.pushManager.getSubscription();
+
+                        if (subscription)
+                            await syncPushSubscription(subscription);
+
+                    }
+
+                })
                 .catch(
                     error =>
                         console.log(

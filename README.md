@@ -71,7 +71,7 @@ cd medicine-reminder
 
 ### 3. Configure Web Push
 
-Background reminders need a running Node.js server and HTTPS. Opening `index.html` directly or using a static-only host will not send reminders while the app is closed.
+GitHub Pages serves the frontend; Render runs the Web Push backend. The backend must remain online and have persistent storage for reminders to work when the app is closed.
 
 1. Install Node.js 20 or later.
 2. Install the dependencies:
@@ -99,10 +99,15 @@ Background reminders need a running Node.js server and HTTPS. Opening `index.htm
 
    In Windows PowerShell, use `npm.cmd start`.
 
-6. Open `http://localhost:3000` for local testing. For a phone or production, deploy the app on an always-on host with HTTPS and persistent storage. Set `DATA_FILE` to a persistent disk path on that host.
-7. Open the deployed URL on the phone, install the app from the browser if available, tap the bell, and allow notifications.
+6. Create a Render **Web Service** from this GitHub repository:
+   * Build command: `npm install`
+   * Start command: `npm start`
+   * Select an instance that does not spin down, and attach persistent storage mounted at `/var/data`.
+   * Add `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `FRONTEND_ORIGINS`, and `DATA_FILE=/var/data/subscriptions.json` as environment variables. `FRONTEND_ORIGINS` must exactly match the GitHub Pages origin (for example, `https://YOUR-USERNAME.github.io`, without the repository path).
+7. After Render provides the service URL, edit `config.js` and set `window.MEDICINE_REMINDER_PUSH_API` to that URL (for example, `https://your-service.onrender.com`). Commit and push `config.js` to GitHub Pages.
+8. Open the GitHub Pages URL on the phone, install the app from the browser if available, tap the bell, and allow notifications. This creates the push subscription and syncs the medicine schedule to Render.
 
-The host must keep the Node.js process running for reminders to be sent on time. A sleeping/free-tier service cannot guarantee delivery while it is asleep.
+The Render service must stay online for reminders to be sent on time. Its local filesystem is not persistent unless the service has a persistent disk mounted at `/var/data`. If the app URL, API URL, or VAPID key changes, tap the bell again to refresh the push setup.
 
 ---
 
@@ -126,6 +131,8 @@ The host must keep the Node.js process running for reminders to be sent on time.
 The app stores its full medicine list in the browser's **LocalStorage**. When push is enabled, it sends the server only medicine name, dosage, dose times, repeat duration, active/stopped status, and time zone so the server can schedule Web Push notifications.
 
 > **Note:** Web Push can arrive when the app is closed, but delivery timing depends on the phone OS, browser notification settings, network, and the server remaining online. Android Chrome/Edge generally support installed PWAs. iPhone/iPad require a supported iOS version and the site added to the Home Screen. Grant notification permission and disable any battery restrictions that prevent the browser from receiving push.
+
+The notification sound is controlled by the phone/browser's default notification settings; the web app cannot force sound if the device is muted or notifications are set to silent.
 
 ---
 

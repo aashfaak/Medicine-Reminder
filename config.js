@@ -1,0 +1,2 @@
+window.MEDICINE_REMINDER_PUSH_API =
+  "";

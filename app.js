@@ -4,6 +4,12 @@ const STORAGE_KEY =
 const LANGUAGE_KEY =
     "medicineReminderLanguage";
 
+const PUSH_API_BASE =
+    (
+        window.MEDICINE_REMINDER_PUSH_API ||
+        window.location.origin
+    ).replace(/\/+$/, "");
+
 const translations = {
     en: {
         eyebrow: "MY HEALTH",
@@ -52,7 +58,8 @@ const translations = {
         enterRepeatDays: "Please enter how many days.",
         notificationsUnsupported: "This browser does not support notifications.",
         notificationPermissionDenied: "Notifications are blocked. Allow them in your browser settings.",
-        notificationError: "Push setup failed. Check HTTPS and server configuration.",
+        notificationError: "Could not show the test notification: {reason}. Check this browser's notification permission and settings.",
+        backgroundUnavailable: "Notifications are enabled while this page is open. Background notifications need a push server.",
         notificationsEnabled: "Notifications are enabled.",
         notificationTitle: "💊 Medicine Reminder",
         reminderMessage: "Time to take {name} — {dosage}",
@@ -106,7 +113,8 @@ const translations = {
         enterRepeatDays: "কত দিন ধরে খাবেন, তা লিখুন।",
         notificationsUnsupported: "এই ব্রাউজারে নোটিফিকেশন সমর্থিত নয়।",
         notificationPermissionDenied: "নোটিফিকেশন বন্ধ আছে। ব্রাউজারের সেটিংস থেকে অনুমতি দিন।",
-        notificationError: "পুশ চালু করা যায়নি। HTTPS ও সার্ভার কনফিগারেশন দেখুন।",
+        notificationError: "পরীক্ষামূলক নোটিফিকেশন দেখানো যায়নি: {reason}। ব্রাউজারের notification permission ও settings দেখুন।",
+        backgroundUnavailable: "এই পেজ খোলা থাকলে নোটিফিকেশন আসবে। পেজ বন্ধ থাকলেও পেতে push server লাগবে।",
         notificationsEnabled: "নোটিফিকেশন চালু হয়েছে।",
         notificationTitle: "💊 Medicine Reminder",
         reminderMessage: "{name} খাওয়ার সময় হয়েছে — {dosage}",
@@ -132,6 +140,7 @@ let medicines =
     );
 
 let lastRenderedDay = "";
+let hasBackgroundPush = false;
 
 
 
@@ -345,11 +354,13 @@ async function syncPushSubscription(subscription) {
         timeZone:
             Intl.DateTimeFormat()
                 .resolvedOptions()
-                .timeZone
+                .timeZone,
+        appUrl:
+            window.location.href
     };
 
     const registerResponse =
-        await fetch("/api/push/subscribe", {
+        await fetch(`${PUSH_API_BASE}/api/push/subscribe`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -378,7 +389,7 @@ async function syncPushSubscription(subscription) {
         }));
 
     const medicinesResponse =
-        await fetch("/api/push/medicines", {
+        await fetch(`${PUSH_API_BASE}/api/push/medicines`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json"
@@ -394,6 +405,8 @@ async function syncPushSubscription(subscription) {
             `Medicine schedule sync failed (${medicinesResponse.status}).`
         );
     }
+
+    hasBackgroundPush = true;
 
 }
 
@@ -1169,6 +1182,44 @@ $("notifyBtn").onclick =
 
             try {
 
+                await showAppNotification(
+                    t("appTitle"),
+                    {
+                        body:
+                            t("notificationsEnabled"),
+                        tag: "medicine-reminder-test",
+                        requireInteraction: true,
+                        vibrate: [
+                            200,
+                            100,
+                            200
+                        ]
+                    }
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Test notification failed:",
+                    error
+                );
+
+                alert(
+                    t("notificationError")
+                        .replace(
+                            "{reason}",
+                            error instanceof Error
+                                ? error.message
+                                : String(error)
+                        )
+                );
+
+                return;
+
+            }
+
+            try {
+
                 if (!("serviceWorker" in navigator)) {
                     throw new Error(
                         "Service Workers are not supported by this browser."
@@ -1176,11 +1227,11 @@ $("notifyBtn").onclick =
                 }
 
                 const keyResponse =
-                    await fetch("/api/push/public-key");
+                    await fetch(`${PUSH_API_BASE}/api/push/public-key`);
 
                 if (!keyResponse.ok) {
                     throw new Error(
-                        `Push server configuration unavailable (${keyResponse.status}).`
+                        `Push server is unavailable (${keyResponse.status}).`
                     );
                 }
 
@@ -1210,30 +1261,19 @@ $("notifyBtn").onclick =
 
                 await syncPushSubscription(subscription);
 
-                await showAppNotification(
-                    t("appTitle"),
-                    {
-                        body:
-                            t("notificationsEnabled"),
-                        tag: "medicine-reminder-test",
-                        requireInteraction: true,
-                        vibrate: [
-                            200,
-                            100,
-                            200
-                        ]
-                    }
+                alert(
+                    t("notificationsEnabled")
                 );
 
             } catch (error) {
 
-                console.error(
-                    "Push notification setup failed:",
+                console.warn(
+                    "Background push is not configured:",
                     error
                 );
 
                 alert(
-                    t("notificationError")
+                    t("backgroundUnavailable")
                 );
 
             }
@@ -1260,6 +1300,10 @@ function checkReminders() {
         new Date();
 
     const today = getLocalDateKey(now);
+    const currentTime =
+        `${String(now.getHours()).padStart(2, "0")}:${
+            String(now.getMinutes()).padStart(2, "0")
+        }`;
 
     if (today !== lastRenderedDay) {
 
@@ -1267,6 +1311,73 @@ function checkReminders() {
         renderMedicines();
 
     }
+
+    if (hasBackgroundPush)
+        return;
+
+    medicines.forEach(medicine => {
+
+        if (getMedicineStatus(medicine) !== "active")
+            return;
+
+        medicine.doses.forEach(dose => {
+
+            const notificationKey =
+                today + currentTime;
+
+            if (
+                dose.time !== currentTime ||
+                dose.lastNotified === notificationKey
+            )
+                return;
+
+            dose.lastNotified =
+                notificationKey;
+
+            saveData();
+
+            const message =
+                t("reminderMessage")
+                    .replace("{name}", medicine.name)
+                    .replace("{dosage}", medicine.dosage);
+
+            if (
+                "Notification" in window &&
+                Notification.permission === "granted"
+            ) {
+
+                showAppNotification(
+                    t("notificationTitle"),
+                    {
+                        body: message,
+                        tag: `medicine-${medicine.id}-${dose.time}`,
+                        requireInteraction: true,
+                        vibrate: [
+                            200,
+                            100,
+                            200
+                        ]
+                    }
+                ).catch(error => {
+
+                    console.error(
+                        "Reminder notification failed:",
+                        error
+                    );
+
+                });
+
+            } else {
+
+                alert(
+                    `${t("notificationTitle")}\n\n${message}`
+                );
+
+            }
+
+        });
+
+    });
 
 }
 

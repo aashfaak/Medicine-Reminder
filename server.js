@@ -14,6 +14,12 @@ const VAPID_SUBJECT = process.env.VAPID_SUBJECT;
 const DATA_FILE = path.resolve(
   process.env.DATA_FILE || "./private-data/subscriptions.json"
 );
+const FRONTEND_ORIGINS = new Set(
+  (process.env.FRONTEND_ORIGINS || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+);
 const APP_DIR = __dirname;
 
 function readStore() {
@@ -174,7 +180,7 @@ async function sendDueNotifications(now = new Date()) {
             title: "💊 Medicine Reminder",
             body: localizedMessage(record, medicine),
             tag: `medicine-${medicine.id}-${dose.time}`,
-            url: "/"
+            url: record.appUrl
           })
         );
         dose.lastPushKey = pushKey;
@@ -197,22 +203,68 @@ async function sendDueNotifications(now = new Date()) {
 
 const app = express();
 app.disable("x-powered-by");
+app.use((request, response, next) => {
+  const origin = request.get("origin");
+
+  if (!origin) {
+    return next();
+  }
+
+  if (!FRONTEND_ORIGINS.has(origin)) {
+    return response.status(403).json({ error: "Origin is not allowed." });
+  }
+
+  response.setHeader("Access-Control-Allow-Origin", origin);
+  response.setHeader("Vary", "Origin");
+  response.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, OPTIONS"
+  );
+  response.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type"
+  );
+
+  if (request.method === "OPTIONS") {
+    return response.sendStatus(204);
+  }
+
+  return next();
+});
 app.use(express.json({ limit: "256kb" }));
 
 app.get("/api/push/public-key", (_request, response) => {
   response.json({ publicKey: PUBLIC_KEY });
 });
 
+app.get("/api/health", (_request, response) => {
+  response.json({ ok: true });
+});
+
 app.post("/api/push/subscribe", (request, response) => {
-  const { subscription, language, timeZone } = request.body || {};
+  const { subscription, language, timeZone, appUrl } = request.body || {};
   if (!validateSubscription(subscription)) {
     return response.status(400).json({ error: "Invalid push subscription." });
   }
 
+  let validAppUrl;
   try {
     new Intl.DateTimeFormat("en", { timeZone });
+    validAppUrl = new URL(appUrl);
   } catch {
-    return response.status(400).json({ error: "Invalid time zone." });
+    return response.status(400).json({
+      error: "Invalid time zone or app URL."
+    });
+  }
+
+  if (
+    validAppUrl.protocol !== "https:" &&
+    !(
+      validAppUrl.protocol === "http:" &&
+      ["localhost", "127.0.0.1"].includes(validAppUrl.hostname)
+    )
+  ) {
+    return response.status(400).json({ error: "Invalid app URL." });
   }
 
   const id = subscriptionId(subscription);
@@ -221,6 +273,7 @@ app.post("/api/push/subscribe", (request, response) => {
     subscription,
     language: language === "bn" ? "bn" : "en",
     timeZone,
+    appUrl: validAppUrl.href,
     medicines: existing ? existing.medicines : []
   };
   saveStore();
@@ -229,7 +282,13 @@ app.post("/api/push/subscribe", (request, response) => {
 });
 
 app.put("/api/push/medicines", (request, response) => {
-  const { subscription, medicines, language, timeZone } = request.body || {};
+  const {
+    subscription,
+    medicines,
+    language,
+    timeZone,
+    appUrl
+  } = request.body || {};
   if (!validateSubscription(subscription)) {
     return response.status(400).json({ error: "Invalid push subscription." });
   }
@@ -241,6 +300,23 @@ app.put("/api/push/medicines", (request, response) => {
     new Intl.DateTimeFormat("en", { timeZone });
   } catch {
     return response.status(400).json({ error: "Invalid time zone." });
+  }
+
+  let validAppUrl;
+  try {
+    validAppUrl = new URL(appUrl);
+  } catch {
+    return response.status(400).json({ error: "Invalid app URL." });
+  }
+
+  if (
+    validAppUrl.protocol !== "https:" &&
+    !(
+      validAppUrl.protocol === "http:" &&
+      ["localhost", "127.0.0.1"].includes(validAppUrl.hostname)
+    )
+  ) {
+    return response.status(400).json({ error: "Invalid app URL." });
   }
 
   const id = subscriptionId(subscription);
@@ -303,6 +379,7 @@ app.put("/api/push/medicines", (request, response) => {
   existing.medicines = safeMedicines;
   existing.language = language === "bn" ? "bn" : "en";
   existing.timeZone = timeZone;
+  existing.appUrl = validAppUrl.href;
   saveStore();
 
   return response.json({ ok: true });
@@ -312,6 +389,7 @@ const publicFiles = {
   "/": "index.html",
   "/index.html": "index.html",
   "/app.js": "app.js",
+  "/config.js": "config.js",
   "/style.css": "style.css",
   "/manifest.json": "manifest.json",
   "/sw.js": "sw.js"
